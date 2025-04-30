@@ -3,7 +3,7 @@
 <html lang="en">
 <head><meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>lab_6</title><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script><script type="module">
+<title>lab_8</title><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.0.3/jquery.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.10/require.min.js"></script><script type="module">
   import mermaid from 'https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.7.0/mermaid.esm.min.mjs';
   mermaid.initialize({ startOnLoad: true });
 </script>
@@ -13089,7 +13089,7 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h1 id="6.-Sieci-neuronowe-w-PyTorch">6. Sieci neuronowe w PyTorch<a class="anchor-link" href="#6.-Sieci-neuronowe-w-PyTorch">¶</a></h1><h3 id="Tomasz-Rodak">Tomasz Rodak<a class="anchor-link" href="#Tomasz-Rodak">¶</a></h3><p>Laboratorium 6</p>
+<h1 id="8.-Transfer-learning.-Rozpoznawanie-obraz%C3%B3w">8. Transfer learning. Rozpoznawanie obrazów<a class="anchor-link" href="#8.-Transfer-learning.-Rozpoznawanie-obraz%C3%B3w">¶</a></h1><h3 id="Tomasz-Rodak">Tomasz Rodak<a class="anchor-link" href="#Tomasz-Rodak">¶</a></h3><p>Laboratorium 8</p>
 <hr/>
 </div>
 </div>
@@ -13097,84 +13097,178 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="6.1">6.1<a class="anchor-link" href="#6.1">¶</a></h2><p>Celem tego arkusza jest wprowadzenie do sieci neuronowych w <a href="https://pytorch.org/">PyTorch</a>.</p>
-<p><a href="https://en.wikipedia.org/wiki/Neural_network_(machine_learning"><strong>Sieć neuronowa</strong></a>) to ogólny termin oznaczający rodzinę modeli o strukturze inspirowanej budową mózgu. Proste sieci neuronowe mają strukturę jednokierunkowego grafu: dane wejściowe przechodzą przez kolejne węzły (warstwy neuronów) wzdłuż krawędzi (połączeń neuronów). Przy przejściu przez krawędź wartość jest mnożona przez wagę krawędzi, w węźle następuje agregacja wartości z krawędzi, a następnie zastosowanie funkcji aktywacji do wyniku tej agregacji.</p>
-<p><strong>PyTorch</strong> to operująca na tensorach biblioteka do głębokiego uczenia, która jest zoptymalizowana pod kątem wydajności na CPU i procesorach graficznych GPU.</p>
-<p>Poniżej przedstawimy demonstrację działania prostej sieci neuronowej przeznaczonej do wykonywania klasyfikacji:</p>
+<h2 id="8.1">8.1<a class="anchor-link" href="#8.1">¶</a></h2><p>Celem tego laboratorium jest zapoznanie się z metodą <a href="https://en.wikipedia.org/wiki/Transfer_learning"><em>transfer learningu</em></a> (uczenia transferowego). Transfer learning to technika uczenia maszynowego, która polega na przenoszeniu wiedzy zdobytej podczas rozwiązywania jednego problemu do innego, pokrewnego problemu. W praktyce oznacza to, że zamiast trenować model od podstaw na dużym zbiorze danych, możemy wykorzystać model, który został już wytrenowany na innym zbiorze danych i dostosować go do naszych potrzeb. Jest to szczególnie przydatne w sytuacjach, gdy mamy ograniczone zasoby obliczeniowe lub mało danych do trenowania.</p>
+<p>Transfer learning zademonstrujemy na przykładzie problemu rozpoznawania obrazów. Wykorzystamy do tego celu pretrenowany model <a href="https://arxiv.org/pdf/1512.03385">ResNet18</a>. Obrazy do klasyfikacji pobierzemy z sekcji <em>Images</em> wyszukiwarki <a href="https://duckduckgo.com/">DuckDuckGo</a>. Wykorzystamy również bibliotekę <a href="https://docs.fast.ai/">fastai</a> do budowy i trenowania modelu.</p>
+<p>Arkusz ten powstał na podstawie kursu <a href="https://course.fast.ai/">fastai</a>, Getting Started</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="8.1.1-Instalacje-i-importy">8.1.1 Instalacje i importy<a class="anchor-link" href="#8.1.1-Instalacje-i-importy">¶</a></h3><p>Jeśli korzystasz z Google Colab, to biblioteka fastai jest już zainstalowana. Brakuje natomiast pakietu <a href="https://github.com/deedy5/duckduckgo_search"><code>duckduckgo-search</code></a>. Pakiet ten wykorzystamy do utworzenia listy odnośników do obrazów, zainstalujesz go poleceniem:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>pip<span class="w"> </span>install<span class="w"> </span>duckduckgo_search
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Importy:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">asyncio</span>
+<span class="kn">import</span> <span class="nn">hashlib</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span> <span class="nn">httpx</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">tqdm.notebook</span> <span class="k">as</span> <span class="nn">tqdm</span>
+<span class="kn">from</span> <span class="nn">duckduckgo_search</span> <span class="kn">import</span> <span class="n">DDGS</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">UnidentifiedImageError</span>
+
+<span class="kn">from</span> <span class="nn">fastai.vision.all</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DataBlock</span><span class="p">,</span>
+    <span class="n">ImageBlock</span><span class="p">,</span>
+    <span class="n">CategoryBlock</span><span class="p">,</span>
+    <span class="n">get_image_files</span><span class="p">,</span>
+    <span class="n">RandomSplitter</span><span class="p">,</span>
+    <span class="n">parent_label</span><span class="p">,</span>
+    <span class="n">Resize</span><span class="p">,</span>
+    <span class="n">resnet18</span><span class="p">,</span> <span class="c1"># Pretrenowana sieć konwolucyjna RESNET18</span>
+    <span class="n">vision_learner</span><span class="p">,</span>
+    <span class="n">error_rate</span><span class="p">,</span>
+    <span class="n">ClassificationInterpretation</span><span class="p">,</span>
+    <span class="n">PILImage</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="8.1.2-Pobieranie-obraz%C3%B3w">8.1.2 Pobieranie obrazów<a class="anchor-link" href="#8.1.2-Pobieranie-obraz%C3%B3w">¶</a></h3><p>Dla uproszczenia załóżmy, że chcemy rozpoznać dwa rodzaje obrazów, później możesz to oczywiście zmienić. Zaproponuj jakieś dwie kategorie. Dane będziemy pobierać z wyszukiwarki DuckDuckGo z sekcji <em>Images</em> wyszukiwania, więc uwzględnij wynikające stąd ograniczenia. Wybór bardzo specyficznej kategorii o słabej reprezentacji w internecie może skutkować nieadekwatnym zbiorem danych. Wybierz takie kategorie, o których spodziewasz się, że będą miały dobrą reprezentację w internecie.</p>
+<p>Funkcje <code>to_hash()</code> i <code>seen_files()</code> są pomocnicze. Funkcja <code>to_hash()</code> konwertuje ciąg znaków na hash MD5, a funkcja <code>seen_files()</code> pobiera zbiór nazw plików (bez rozszerzeń) z folderu. Użyjemy ich do sprawdzenia, czy dany obraz został już pobrany. Takie śledzenie plików jest istotne, gdyż różne zapytania do wyszukiwarki mogą czasami zwracać te same obrazy - nie chcemy ich pobierać więcej niż raz.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">to_hash</span><span class="p">(</span><span class="n">s</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Konwertuje ciąg znaków na hash MD5.</span>
+<span class="sd">    </span>
+<span class="sd">    Argumenty:</span>
+<span class="sd">        s (str): Ciąg znaków do hashowania</span>
+<span class="sd">        </span>
+<span class="sd">    Zwraca:</span>
+<span class="sd">        str: Hash MD5 podanego ciągu w formacie szesnastkowym</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">hashlib</span><span class="o">.</span><span class="n">md5</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">seen_files</span><span class="p">(</span><span class="n">folder</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Pobiera zbiór nazw plików (bez rozszerzeń) z folderu.</span>
+<span class="sd">    </span>
+<span class="sd">    Argumenty:</span>
+<span class="sd">        folder (str lub Path): Ścieżka do folderu do przeskanowania</span>
+<span class="sd">        </span>
+<span class="sd">    Zwraca:</span>
+<span class="sd">        set: Zbiór nazw plików bez rozszerzeń</span>
+<span class="sd">    """</span>
+    <span class="n">files</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">folder</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">set</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">stem</span> <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Tworzę folder <code>datasets/imgrec</code>, w którym będą przechowywane pobrane obrazy. Będę rozpoznawał obrazy dzika i jelenia. Aby je przechować, tworzę podfoldery <code>boar</code> i <code>deer</code>. Powinieneś wybrać inne kategorie, ale foldery powinny mieć podobną strukturę. Oznacza to, że powinieneś również dokonać odpowiednich zmian w kodzie poniżej, tak aby odpowiadał Twoim kategoriom.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># !mkdir -p datasets/imgrec</span>
+<span class="c1"># !mkdir -p datasets/imgrec/boar</span>
+<span class="c1"># !mkdir -p datasets/imgrec/deer</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>W tym miejscu tworzymy zapytanie do wyszukiwarki. <strong>Upewnij się, że zapytanie jest odpowiednie do kategorii!</strong> (zmienne <code>keywords</code> i <code>category</code>). Zbiór danych zostałby uszkodzony, gdybym przykładowo w kategorii <code>boar</code> dodał zapytanie o <code>deer</code>. W takim przypadku nie da się poprawnie wytrenować modelu.</p>
+<p>Zapytanie delegowane jest do wyszukiwarki DuckDuckGo, która zwraca listę linków do obrazów (<code>images_links</code>).</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># keywords = 'sus scrofa'</span>
+<span class="c1"># category = 'boar'</span>
+
+<span class="k">with</span> <span class="n">DDGS</span><span class="p">()</span> <span class="k">as</span> <span class="n">ddgs</span><span class="p">:</span>
+    <span class="n">images_gen</span> <span class="o">=</span> <span class="n">ddgs</span><span class="o">.</span><span class="n">images</span><span class="p">(</span>
+        <span class="n">keywords</span><span class="p">,</span>
+        <span class="n">max_results</span><span class="o">=</span><span class="mi">100</span>
+    <span class="p">)</span>
+    <span class="n">images_links</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">images_gen</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Główna pętla pobierająca obrazy iteruje po wszystkich linkach i pobiera je asynchronicznie. Używamy <code>asyncio</code> do równoległego pobierania obrazów, co przyspiesza cały proces. Ważne zmienne:</p>
 <ul>
-<li>utworzymy syntetyczny zbiór danych w postaci punktów w przestrzeni 2D (dzięki czemu będziemy mogli wizualizować wyniki),</li>
-<li>zbudujemy sieć neuronową,</li>
-<li>pokażemy jak wykonać jej trening,</li>
-<li>zwizualizujemy wyniki klasyfikacji.</li>
+<li><code>FOLDER</code> - folder, w którym znajduje się zbiór danych</li>
+<li><code>subfolder</code> - podfolder, w którym będą przechowywane pobrane obrazy w danej kategorii</li>
+<li><code>already_seen</code> - zbiór nazw plików, które zostały już pobrane.</li>
 </ul>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="6.1.2-Importowanie-bibliotek">6.1.2 Importowanie bibliotek<a class="anchor-link" href="#6.1.2-Importowanie-bibliotek">¶</a></h3>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
-
-<span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">confusion_matrix</span><span class="p">,</span> <span class="n">accuracy_score</span>
-
-<span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
-<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <span class="n">DataLoader</span><span class="p">,</span> <span class="n">TensorDataset</span>
-
-<span class="kn">from</span> <span class="nn">torchinfo</span> <span class="kn">import</span> <span class="n">summary</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="6.1.3-Generowanie-danych">6.1.3 Generowanie danych<a class="anchor-link" href="#6.1.3-Generowanie-danych">¶</a></h3>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">N</span> <span class="o">=</span> <span class="mi">5_000</span>
-<span class="n">r1</span><span class="p">,</span> <span class="n">r2</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span>
-<span class="n">sd</span> <span class="o">=</span> <span class="mf">.2</span>
-<span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="n">N</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">N</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
-<span class="n">X</span><span class="p">[:</span><span class="n">N</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">r1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sd</span><span class="p">,</span> <span class="n">N</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">X</span><span class="p">[:</span><span class="n">N</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">r1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sd</span><span class="p">,</span> <span class="n">N</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">X</span><span class="p">[</span><span class="n">N</span><span class="o">//</span><span class="mi">2</span><span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">r2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sd</span><span class="p">,</span> <span class="n">N</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">X</span><span class="p">[</span><span class="n">N</span><span class="o">//</span><span class="mi">2</span><span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">r2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">sd</span><span class="p">,</span> <span class="n">N</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
-<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">N</span><span class="p">)</span>
-<span class="n">y</span><span class="p">[</span><span class="n">N</span><span class="o">//</span><span class="mi">2</span><span class="p">:]</span> <span class="o">=</span> <span class="mi">1</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">X</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">);</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="6.1.4-Konwersja-danych-do-PyTorch">6.1.4 Konwersja danych do PyTorch<a class="anchor-link" href="#6.1.4-Konwersja-danych-do-PyTorch">¶</a></h3><p>Aby PyTorch mógł wykonać obliczenia na danych, muszą one mieć format <strong>tensora</strong>. Tensory to wielowymiarowe tablice numeryczne, które są podstawowym typem danych w PyTorch. W porównaniu do tablic NumPy tensory mają dodatkowe właściwości, takie jak możliwość wykonywania obliczeń na GPU, automatyczne różniczkowanie i możliwość śledzenia gradientów.</p>
-<p>Funkcja <code>torch.tensor()</code> konwertuje tablicę NumPy na tensor PyTorch. Korzystamy ponadto z:</p>
+<p>Nazwy plików są generowane na podstawie hasha MD5 adresu URL obrazu. Dzięki temu unikamy niespodziewanych znaków w nazwach plików. Funkcja <code>download_image_async()</code> sprawdza liczne możliwe błędy:</p>
 <ul>
-<li><code>torch.utils.data.TensorDataset</code> - klasa, która tworzy zbiór danych z tensorów,</li>
-<li><code>torch.utils.data.DataLoader</code> - klasa, która tworzy iteratory na zbiorach danych, dzieląc je na partie zwane batchami (<em>ang. batch</em>).</li>
+<li><code>httpx.HTTPError</code> - błąd HTTP</li>
+<li><code>httpx.TimeoutException</code> - przekroczony czas oczekiwania na odpowiedź</li>
+<li><code>UnidentifiedImageError</code> - błąd związany z otwieraniem obrazu, dzięki czemu zapisujemy tylko poprawne obrazy.</li>
 </ul>
+<p>Program ten możesz wykonywać wielokrotnie, pamiętaj jednak, aby wcześniej wstawić odpowiednie zapytanie i kategorię w komórce powyżej.</p>
 </div>
 </div>
 </div>
@@ -13183,11 +13277,63 @@ div#notebook {
 <div class="prompt input_prompt">In [ ]:</div>
 <div class="inner_cell">
 <div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-<span class="n">labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">FOLDER</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s1">'datasets/imgrec'</span><span class="p">)</span>
+<span class="n">subfolder</span> <span class="o">=</span> <span class="n">FOLDER</span><span class="o">/</span><span class="n">category</span>
+<span class="n">already_seen</span> <span class="o">=</span> <span class="n">seen_files</span><span class="p">(</span><span class="n">subfolder</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Now </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">already_seen</span><span class="p">)</span><span class="si">}</span><span class="s1"> files in </span><span class="si">{</span><span class="n">subfolder</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+<span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
 
-<span class="n">train_dataset</span> <span class="o">=</span> <span class="n">TensorDataset</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
-<span class="n">train_loader</span> <span class="o">=</span> <span class="n">DataLoader</span><span class="p">(</span><span class="n">train_dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">async</span> <span class="k">def</span> <span class="nf">download_image_async</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">image_url</span><span class="p">,</span> <span class="n">already_seen</span><span class="p">,</span> <span class="n">subfolder</span><span class="p">,</span> <span class="n">to_hash</span><span class="p">,</span> <span class="n">semaphore</span><span class="p">):</span>
+    <span class="k">async</span> <span class="k">with</span> <span class="n">semaphore</span><span class="p">:</span>  <span class="c1"># Limit concurrent downloads</span>
+        <span class="n">file</span> <span class="o">=</span> <span class="n">to_hash</span><span class="p">(</span><span class="n">image_url</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">already_seen</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Already seen: </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s1">=</span><span class="si">{</span><span class="n">image_url</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">headers</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">'User-Agent'</span><span class="p">:</span> <span class="s1">'Mozilla/5.0 (X11; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0'</span>
+            <span class="p">}</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">image_url</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">httpx</span><span class="o">.</span><span class="n">HTTPError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'HTTPError: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s1"> for </span><span class="si">{</span><span class="n">image_url</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+        <span class="k">except</span> <span class="n">httpx</span><span class="o">.</span><span class="n">TimeoutException</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Timeout: </span><span class="si">{</span><span class="n">image_url</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">))</span>
+        <span class="k">except</span> <span class="n">UnidentifiedImageError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Image error for </span><span class="si">{</span><span class="n">image_url</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+            <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="n">file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">file</span><span class="p">)</span><span class="o">.</span><span class="n">with_suffix</span><span class="p">(</span><span class="sa">f</span><span class="s1">'.</span><span class="si">{</span><span class="n">img</span><span class="o">.</span><span class="n">format</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'New file = </span><span class="si">{</span><span class="n">image_url</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">subfolder</span><span class="o">/</span><span class="n">file</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Saved </span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s1"> to </span><span class="si">{</span><span class="n">subfolder</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">file</span>
+
+<span class="n">max_concurrent</span> <span class="o">=</span> <span class="mi">10</span>  
+<span class="n">semaphore</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Semaphore</span><span class="p">(</span><span class="n">max_concurrent</span><span class="p">)</span>
+
+<span class="n">client</span> <span class="o">=</span> <span class="n">httpx</span><span class="o">.</span><span class="n">AsyncClient</span><span class="p">(</span><span class="n">limits</span><span class="o">=</span><span class="n">httpx</span><span class="o">.</span><span class="n">Limits</span><span class="p">(</span><span class="n">max_connections</span><span class="o">=</span><span class="mi">20</span><span class="p">))</span>
+
+<span class="n">tasks</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">image</span> <span class="ow">in</span> <span class="n">images_links</span><span class="p">:</span>
+    <span class="n">image_url</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="s1">'image'</span><span class="p">]</span>
+    <span class="n">task</span> <span class="o">=</span> <span class="n">download_image_async</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">image_url</span><span class="p">,</span> <span class="n">already_seen</span><span class="p">,</span> <span class="n">subfolder</span><span class="p">,</span> <span class="n">to_hash</span><span class="p">,</span> <span class="n">semaphore</span><span class="p">)</span>
+    <span class="n">tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+
+<span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">)</span>
+<span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">aclose</span><span class="p">()</span>  <span class="c1"># Close the client when done</span>
+
+<span class="n">successful</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">results</span> <span class="k">if</span> <span class="n">r</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">'Total files downloaded: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">successful</span><span class="p">)</span><span class="si">}</span><span class="s1">'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -13196,346 +13342,318 @@ div#notebook {
 <div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
 </div><div class="inner_cell">
 <div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="6.1.5-Budowanie-modelu">6.1.5 Budowanie modelu<a class="anchor-link" href="#6.1.5-Budowanie-modelu">¶</a></h3><p>W PyTorch najczęściej definiuje się architekturę sieci neuronowej, tworząc klasę dziedziczącą po <code>torch.nn.Module</code>. W tej klasie:</p>
+<p>Rozmiar folderu <code>datasets/imgrec</code>:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>du<span class="w"> </span>-hsc<span class="w"> </span>datasets/imgrec
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Liczba pobranych obrazów w folderze <code>boar</code>:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>ls<span class="w"> </span>-lh<span class="w"> </span>datasets/imgrec/boar/<span class="p">|</span>wc<span class="w"> </span>-l
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Liczba pobranych obrazów w folderze <code>deer</code>:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="o">!</span>ls<span class="w"> </span>-lh<span class="w"> </span>datasets/imgrec/deer/<span class="p">|</span>wc<span class="w"> </span>-l
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="8.1.3-Konstrukcja-loadera-danych">8.1.3 Konstrukcja loadera danych<a class="anchor-link" href="#8.1.3-Konstrukcja-loadera-danych">¶</a></h3><p>W tej sekcji tworzymy loader danych. Loader danych to obiekt, który umożliwia ładowanie danych w partiach (batchach) do modelu. W fastai używamy do tego celu klasy <code>DataBlock</code>:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">dls</span> <span class="o">=</span> <span class="n">DataBlock</span><span class="p">(</span>
+    <span class="n">blocks</span><span class="o">=</span><span class="p">(</span><span class="n">ImageBlock</span><span class="p">,</span> <span class="n">CategoryBlock</span><span class="p">),</span>
+    <span class="n">get_items</span><span class="o">=</span><span class="n">get_image_files</span><span class="p">,</span>
+    <span class="n">splitter</span><span class="o">=</span><span class="n">RandomSplitter</span><span class="p">(</span><span class="n">valid_pct</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">123</span><span class="p">),</span>
+    <span class="n">get_y</span><span class="o">=</span><span class="n">parent_label</span><span class="p">,</span>
+    <span class="n">item_tfms</span><span class="o">=</span><span class="p">[</span><span class="n">Resize</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">'squish'</span><span class="p">)]</span>
+<span class="p">)</span><span class="o">.</span><span class="n">dataloaders</span><span class="p">(</span><span class="n">FOLDER</span><span class="p">,</span> <span class="n">bs</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Argumenty z wywołania powyżej:</p>
+<ol>
+<li><p><strong>Definicja bloków</strong></p>
+<div class="highlight"><pre><span></span><span class="n">blocks</span><span class="o">=</span><span class="p">(</span><span class="n">ImageBlock</span><span class="p">,</span> <span class="n">CategoryBlock</span><span class="p">)</span>
+</pre></div>
+<p>– pierwszy blok odpowiada za wczytywanie obrazów, drugi za etykiety (kategorie).</p>
+</li>
+<li><p><strong>Pobieranie plików</strong></p>
+<div class="highlight"><pre><span></span><span class="n">get_items</span><span class="o">=</span><span class="n">get_image_files</span>
+</pre></div>
+<p>– wyszukuje w danym folderze wszystkie pliki graficzne.</p>
+</li>
+<li><p><strong>Podział na zbiory</strong></p>
+<div class="highlight"><pre><span></span><span class="n">splitter</span><span class="o">=</span><span class="n">RandomSplitter</span><span class="p">(</span><span class="n">valid_pct</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
+</pre></div>
+<p>– losowo dzieli dane na 80 % zbiór treningowy i 20 % walidacyjny, przy stałym ziarnie losowości.</p>
+</li>
+<li><p><strong>Pobieranie etykiet</strong></p>
+<div class="highlight"><pre><span></span><span class="n">get_y</span><span class="o">=</span><span class="n">parent_label</span>
+</pre></div>
+<p>– etykieta dla każdego obrazu to nazwa katalogu, w którym się znajduje.</p>
+</li>
+<li><p><strong>Transformacja elementów</strong></p>
+<div class="highlight"><pre><span></span><span class="n">item_tfms</span><span class="o">=</span><span class="p">[</span><span class="n">Resize</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">'squish'</span><span class="p">)]</span>
+</pre></div>
+<p>– zmiana rozmiaru każdego obrazu na 128×128 pikseli, bez zachowania proporcji (rozciągnięcie).</p>
+</li>
+<li><p><strong>Utworzenie DataLoaders</strong></p>
+<div class="highlight"><pre><span></span><span class="o">.</span><span class="n">dataloaders</span><span class="p">(</span><span class="n">FOLDER</span><span class="p">,</span> <span class="n">bs</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+</pre></div>
+<p>– wskazanie ścieżki do głównego folderu z danymi i ustawienie rozmiaru batcha na 8.</p>
+</li>
+</ol>
+<p>Efektem jest obiekt <code>dls</code>, który udostępnia gotowe do użycia batch’e obrazów i odpowiadających im etykiet do trenowania i walidacji modelu.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Podgląd 6 losowo wybranych obrazów z batcha:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">dls</span><span class="o">.</span><span class="n">show_batch</span><span class="p">(</span><span class="n">max_n</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="8.1.4-Budowa-modelu">8.1.4 Budowa modelu<a class="anchor-link" href="#8.1.4-Budowa-modelu">¶</a></h3>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">learner</span> <span class="o">=</span> <span class="n">vision_learner</span><span class="p">(</span><span class="n">dls</span><span class="p">,</span> <span class="n">resnet18</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="n">error_rate</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Ta komórka tworzy obiekt <strong>Learner</strong>, czyli gotowy do trenowania model CNN w Fastai:</p>
+<ol>
+<li><p><strong>vision_learner</strong><br/>
+– funkcja pomocnicza, która tworzy obiekt <code>Learner</code>.</p>
+</li>
+<li><p><strong>dls</strong><br/>
+– przekazujemy wcześniej zdefiniowane <code>DataLoaders</code> (<code>dls</code>) ze zbiorami treningowym i walidacyjnym.</p>
+</li>
+<li><p><strong>resnet18</strong><br/>
+– wykorzystujemy architekturę ResNet-18; domyślnie ładowana jest wstępnie wytrenowana sieć na ImageNet.</p>
+</li>
+<li><p><strong>metrics=error_rate</strong><br/>
+– definiujemy metrykę do śledzenia podczas treningu – w tym wypadku odsetek błędnych klasyfikacji.</p>
+</li>
+</ol>
+<p>Efektem jest <code>learner</code>, który zawiera model, dane, optymalizator i wybraną metrykę, przygotowany do treningu i ewaluacji.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h4 id="8.1.5-Trening">8.1.5 Trening<a class="anchor-link" href="#8.1.5-Trening">¶</a></h4>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="o">%%time</span>
+<span class="n">learner</span><span class="o">.</span><span class="n">fine_tune</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Powyższe wywołanie skutkuje transfer learningiem w dwóch fazach, rozłożonych na 3 epoki:</p>
+<ol>
+<li><p><strong>Faza “rozgrzewki” (freeze)</strong></p>
 <ul>
-<li><strong>Konstruktor <code>__init__</code>:</strong> Inicjalizuje się tutaj wszystkie warstwy sieci, takie jak warstwy liniowe (<code>nn.Linear</code>), konwolucyjne (<code>nn.Conv2d</code>), itd.</li>
-<li><strong>Metoda <code>forward</code>:</strong> Określa się przebieg danych przez sieć, czyli w jaki sposób kolejne warstwy przetwarzają dane wejściowe.</li>
+<li>Domyślnie przez <strong>1 epokę</strong> zamraża się wszystkie warstwy bazowego ResNet-a (oprócz głowy) i trenuje tylko głowę klasyfikatora,</li>
 </ul>
-<p>W podanym niżej przykładzie:</p>
+</li>
+<li><p><strong>Faza “dostrajania” (unfreeze)</strong></p>
 <ul>
-<li>W metodzie <code>__init__</code> definiujemy dwie warstwy liniowe.</li>
-<li>W metodzie <code>forward</code> przekazujemy dane przez warstwę wejściową, stosujemy funkcję aktywacji ReLU oraz przechodzimy przez kolejną warstwę.</li>
+<li>Następnie wszystkie warstwy zostają odmrożone i trenujesz całą sieć przez pozostałe <strong>2 epoki</strong> (3 – 1 = 2) z automatycznie dobranym harmonogramem tempa uczenia</li>
 </ul>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="k">class</span> <span class="nc">Klasyfikator</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">Klasyfikator</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="c1"># Warstwa liniowa: 2 wejścia (wymiary danych), 30 neuronów w warstwie ukrytej</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-        <span class="c1"># Warstwa liniowa: 30 neuronów w warstwie ukrytej, 10 neuronów w kolejnej warstwie</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
-        <span class="c1"># Warstwa liniowa: 10 neuronów w warstwie ukrytej, 1 wyjście (prawdopodobieństwo klasy)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fc3</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="c1"># Funkcja aktywacji ReLU</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">()</span>
-        <span class="c1"># Funkcja aktywacji Sigmoid (do klasyfikacji binarnej)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">sigmoid</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sigmoid</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="c1"># Przejście przez pierwszą warstwę liniową i zastosowanie ReLU</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc1</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="c1"># Przejście przez drugą warstwę liniową i zastosowanie ReLU</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc2</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="c1"># Przejście przez trzecią warstwę liniową i zastosowanie Sigmoid</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc3</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">x</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Utworzenie obiektu klasy <code>Klasyfikator</code> - jest to sieć neuronowa zbudowana zgodnie z szablonem zdefiniowanym w klasie <code>Klasyfikator</code>:</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">clf</span> <span class="o">=</span> <span class="n">Klasyfikator</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Przepchnięcie jednej próbki przez sieć neuronową:</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">clf</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">]]))</span>  <span class="c1"># Przykładowe wejście</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Tak klasyfikator sam się przedstawia:</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">clf</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Podsumowanie wykonane przez funkcję <code>torchinfo.summary()</code>:</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">summary</span><span class="p">(</span><span class="n">clf</span><span class="p">,</span> <span class="n">input_size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">col_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"input_size"</span><span class="p">,</span> <span class="s2">"output_size"</span><span class="p">,</span> <span class="s2">"num_params"</span><span class="p">])</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Obliczenie przewidywań dla wszystkich próbek w zbiorze treningowym (jeszcze przed rozpoczęciem treningu):</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">clf</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span> <span class="c1"># Ustawienie modelu w tryb ewaluacji</span>
-<span class="n">y_proba</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">train_dataset</span><span class="p">[:][</span><span class="mi">0</span><span class="p">])</span>
-<span class="n">y_pred</span> <span class="o">=</span> <span class="n">y_proba</span> <span class="o">&gt;</span> <span class="mf">0.5</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Zmienna <code>y_proba</code> to tensor zawierający prawdopodobieństwa przynależności do klas. My mamy tylko dwie klasy a warstwie wyjściowej ustawiliśmy funkcję sigmoid na jednowymiarowym wyjściu, więc <code>y_proba</code> to tensor jednowymiarowy z prawdopodobieństwami przynależności do klasy 1. Tensor <code>y_pred</code> zamienia prawdopodobieństwa na klasy (0 lub 1) względem progu 0.5.</p>
-<p>Aktualna ocena modelu na zbiorze treningowym:</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">accuracy_score</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>  <span class="c1"># Obliczenie dokładności modelu</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">confusion_matrix</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>  <span class="c1"># Macierz pomyłek</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Wizualizacja przewidywań przed rozpoczęciem treningu:</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">X</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="n">y_pred</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">s</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="6.1.6-Funkcja-straty">6.1.6 Funkcja straty<a class="anchor-link" href="#6.1.6-Funkcja-straty">¶</a></h3><p>Funkcja straty to miara różnicy między przewidywaniami modelu a rzeczywistymi wartościami. W przypadku klasyfikacji binarnej najczęściej stosuje się funkcję straty <code>Binary Cross-Entropy Loss</code>, która jest dostępna w PyTorch jako <code>torch.nn.BCELoss</code>. Funkcja ta oblicza stratę na podstawie prawdopodobieństw przynależności do klasy 1.</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">loss_fn</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BCELoss</span><span class="p">()</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Wartość straty przed treningiem:</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">loss_fn</span><span class="p">(</span><span class="n">y_proba</span><span class="p">,</span> <span class="n">train_dataset</span><span class="p">[:][</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>  <span class="c1"># Obliczenie straty</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="6.1.7-Optymalizator">6.1.7 Optymalizator<a class="anchor-link" href="#6.1.7-Optymalizator">¶</a></h3><p>Optymalizator to algorytm, który aktualizuje wagi modelu w celu minimalizacji funkcji straty. W PyTorch dostępnych jest wiele optymalizatorów, takich jak <code>SGD</code>, <code>Adam</code>, <code>RMSprop</code>, itd. W naszym przypadku użyjemy optymalizatora <code>Adam</code>, który jest dostępny w PyTorch jako <code>torch.optim.Adam</code>. Parametr <code>lr</code> to współczynnik uczenia, który kontroluje szybkość aktualizacji wag.</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">clf</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h3 id="6.1.8-Trening-modelu">6.1.8 Trening modelu<a class="anchor-link" href="#6.1.8-Trening-modelu">¶</a></h3><p>Trening modelu polega na wielokrotnym przechodzeniu przez zbiór danych, obliczaniu straty i aktualizowaniu wag modelu. <strong>Iteracją</strong> nazywamy przetworzenie jednego batcha danych - następuje wtedy obliczenie straty i aktualizacja wag. <strong>Epoką</strong> nazywamy przetworzenie całego zbioru danych, czyli przejście przez wszystkie batche, na które dzielimy zbiór danych. Ważna uwaga: po każdej epoce zbiór danych jest mieszany, dlatego odpowiadające sobie batch'e w kolejnych epokach zawierają różne próbki.</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">n_epochs</span> <span class="o">=</span> <span class="mi">4</span>  <span class="c1"># Liczba epok treningowych</span>
-
-<span class="n">clf</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>  <span class="c1"># Ustawienie modelu w tryb treningu</span>
-
-<span class="c1"># Pętla treningowa</span>
-<span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_epochs</span><span class="p">):</span>
-    <span class="k">for</span> <span class="n">x_batch</span><span class="p">,</span> <span class="n">y_batch</span> <span class="ow">in</span> <span class="n">train_loader</span><span class="p">:</span>  <span class="c1"># Iteracja po batchach danych</span>
-        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>  <span class="c1"># Wyzerowanie gradientów</span>
-        <span class="n">y_proba</span> <span class="o">=</span> <span class="n">clf</span><span class="p">(</span><span class="n">x_batch</span><span class="p">)</span>  <span class="c1"># Obliczenie przewidywań modelu</span>
-        <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_fn</span><span class="p">(</span><span class="n">y_proba</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">y_batch</span><span class="p">)</span>  <span class="c1"># Obliczenie straty</span>
-        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>  <span class="c1"># Obliczenie gradientów</span>
-        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>  <span class="c1"># Aktualizacja wag modelu</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Epoch </span><span class="si">{</span><span class="n">epoch</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n_epochs</span><span class="si">}</span><span class="s2">, Loss: </span><span class="si">{</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">:</span><span class="s2">.4f</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>  <span class="c1"># Wyświetlenie straty z ostaniej iteracji</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<p>Przewidywania modelu na zbiorze treningowym:</p>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">clf</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-<span class="n">y_proba</span> <span class="o">=</span> <span class="n">clf</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">train_dataset</span><span class="p">[:][</span><span class="mi">0</span><span class="p">])</span>
-<span class="n">y_pred</span> <span class="o">=</span> <span class="n">y_proba</span> <span class="o">&gt;</span> <span class="mf">0.5</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">accuracy_score</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>  <span class="c1"># Obliczenie dokładności modelu</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">confusion_matrix</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">())</span>  <span class="c1"># Macierz pomyłek</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing code_cell rendered">
-<div class="input">
-<div class="prompt input_prompt">In [ ]:</div>
-<div class="inner_cell">
-<div class="input_area">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">X</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">X</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">c</span><span class="o">=</span><span class="n">y_pred</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s1">'coolwarm'</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
-</div><div class="inner_cell">
-<div class="text_cell_render border-box-sizing rendered_html">
-<h2 id="6.2-Zadanie">6.2 Zadanie<a class="anchor-link" href="#6.2-Zadanie">¶</a></h2><p>Wykonaj eksperymenty zmieniając:</p>
+</li>
+</ol>
+<p>W efekcie <code>learner.fine_tune(3)</code> wykona:</p>
 <ul>
-<li>liczbę neuronów w warstwie ukrytej,</li>
-<li>liczbę warstw ukrytych,</li>
-<li>funkcję aktywacji,</li>
-<li>współczynnik uczenia,</li>
-<li>liczbę epok,</li>
-<li>rozmiar batcha,</li>
-<li>rozmiar zbioru treningowego,</li>
-<li>postać zbioru treningowego (np. zmień odchylenie standardowe <code>sd</code> generowanych punktów)</li>
+<li><strong>1 epokę</strong> treningu głowy przy zamrożonych wagach ResNet-a,</li>
+<li><strong>2 epoki</strong> treningu całej sieci po jej odmrożeniu.</li>
 </ul>
+<p>Możesz zmienić liczbę epok fazy „rozgrzewki”, korzystając z dodatkowego argumentu <code>freeze_epochs</code>, np.:</p>
+<div class="highlight"><pre><span></span><span class="n">learner</span><span class="o">.</span><span class="n">fine_tune</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">freeze_epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+<p>co da 2 epoki tylko głowy, a następnie 1 epokę pełnego odblokowania.</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h3 id="8.1.5-Ocena">8.1.5 Ocena<a class="anchor-link" href="#8.1.5-Ocena">¶</a></h3><p>Macierz pomyłek:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">ci</span> <span class="o">=</span> <span class="n">ClassificationInterpretation</span><span class="o">.</span><span class="n">from_learner</span><span class="p">(</span><span class="n">learner</span><span class="p">)</span>
+<span class="n">ci</span><span class="o">.</span><span class="n">plot_confusion_matrix</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Podgląd 6 największych błędów klasyfikacji:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">ci</span><span class="o">.</span><span class="n">plot_top_losses</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing text_cell rendered"><div class="prompt input_prompt">
+</div><div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Przykład klasyfikacji dla zupełnie nowych obrazów:</p>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="c1"># adres URL nowego obrazka; wstaw odpowiedni dla twojej kategorii</span>
+<span class="n">url</span> <span class="o">=</span> <span class="s2">"https://as1.ftcdn.net/v2/jpg/01/27/10/72/1000_F_127107272_V6IH9cZhwyBMrKAmkomHAwGS5E8GTBwo.jpg"</span>
+<span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+<span class="n">r</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span>  <span class="c1"># Sprawdź, czy żądanie zakończyło się sukcesem</span>
+
+<span class="c1"># zapisz obrazek do pliku</span>
+<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">'img.jpg'</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">content</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">learner</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">PILImage</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">"img.jpg"</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"./img.jpg"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In [ ]:</div>
+<div class="inner_cell">
+<div class="input_area">
+<div class="highlight hl-ipython3"><pre><span></span> 
+</pre></div>
+</div>
 </div>
 </div>
 </div>
